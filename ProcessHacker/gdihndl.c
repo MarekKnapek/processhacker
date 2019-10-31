@@ -231,6 +231,8 @@ VOID PhpRefreshGdiHandles(
     USHORT processId;
     PGDI_HANDLE_ENTRY handle;
     PPH_GDI_HANDLE_ITEM gdiHandleItem;
+    MEMORY_BASIC_INFORMATION mbi;
+    ULONG handleCount;
 
     lvHandle = GetDlgItem(hwndDlg, IDC_LIST);
 
@@ -249,10 +251,16 @@ VOID PhpRefreshGdiHandles(
 
     PhClearList(Context->List);
 
-    gdiShared = (PGDI_SHARED_MEMORY)NtCurrentPeb()->GdiSharedHandleTable;
     processId = (USHORT)Context->ProcessItem->ProcessId;
+    gdiShared = (PGDI_SHARED_MEMORY)NtCurrentPeb()->GdiSharedHandleTable;
+    handleCount = GDI_MAX_HANDLE_COUNT;
+    if(VirtualQuery(gdiShared, &mbi, sizeof(mbi)) != 0)
+    {
+        handleCount = (ULONG)(mbi.RegionSize / sizeof(GDI_HANDLE_ENTRY));
+        handleCount = min(GDI_MAX_HANDLE_COUNT, handleCount);
+    }
 
-    for (i = 0; i < GDI_MAX_HANDLE_COUNT; i++)
+    for (i = 0; i < handleCount; i++)
     {
         PWSTR typeName;
         INT lvItemIndex;
